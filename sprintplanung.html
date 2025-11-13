@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprintplanung</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            color: #e8e8e8;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Login Screen */
+        .login-container {
+            max-width: 400px;
+            margin: 10vh auto;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.06);
+            color: #e8e8e8;
+            transition: all 0.2s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #0a84ff;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
+        
+        .error-message {
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            color: #ff453a;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .error-message.show { display: block; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .user-info {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-right: 0.5rem;
+        }
+        
+        /* Buttons */
+        button {
+            padding: 0.65rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(10, 132, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #e8e8e8;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(48, 209, 88, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff453a 0%, #dc3545 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 69, 58, 0.4);
+        }
+        
+        .btn-icon {
+            padding: 0.5rem 0.75rem;
+            font-size: 1.1rem;
+        }
+        
+        /* Filter Bar */
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-bar label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .filter-bar select {
+            padding: 0.6rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #e8e8e8;
+            font-size: 0.9rem;
+            min-width: 200px;
+        }
+        
+        .filter-bar select:focus {
+            outline: none;
+            border-color: #0a84ff;
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
+        
+        /* Session Grid */
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        
+        .session-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .session-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }
+        
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .team-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .team-brand { background: rgba(255, 149, 0, 0.2); color: #ff9500; }
+        .team-campaign { background: rgba(10, 132, 255, 0.2); color: #0a84ff; }
+        .team-media { background: rgba(175, 82, 222, 0.2); color: #af52de; }
+        .team-custom { background: rgba(48, 209, 88, 0.2); color: #30d158; }
+        
+        .session-date {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+        
+        .session-meta {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 1rem;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .session-actions button {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(40px);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .modal-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #e8e8e8;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Sprint Planning View */
+        .weeks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .weeks-grid { grid-template-columns: 1fr; }
+        }
+        
+        .week-card {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 1.25rem;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(10px);
+        }
+        
+        .week-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        
+        .label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            min-width: 70px;
+        }
+        
+        input[type="text"], input[type="number"], input[type="date"], select {
+            padding: 0.65rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.06);
+            color: #e8e8e8;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="number"] { width: 80px; }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] { -moz-appearance: textfield; }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #0a84ff;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+        }
+        
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.08);
+            height: 8px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .task-item {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 0.65rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        
+        .size-btn {
+            padding: 0.4rem 0.55rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 38px;
+            height: 28px;
+            color: #e8e8e8;
+        }
+        
+        .size-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(10, 132, 255, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .size-btn.active {
+            background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            padding: 0 0.5rem;
+        }
+        
+        .tab {
+            padding: 0.65rem 1.25rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #e8e8e8;
+        }
+        
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 16px rgba(10, 132, 255, 0.3);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 3rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login View -->
+    <div id="loginView" class="view">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>🚀 Sprintplanung</h1>
+                <p>Team-Login erforderlich</p>
+            </div>
+            <div class="error-message" id="loginError"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>E-Mail</label>
+                    <input type="email" id="loginEmail" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Passwort</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary">Anmelden</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sessions List View -->
+    <div id="sessionsView" class="view">
+        <div class="container">
+            <div class="header">
+                <h1>Sprintplanung</h1>
+                <div class="header-actions">
+                    <span class="user-info" id="userEmail"></span>
+                    <button class="btn-secondary" onclick="showArchive()">📦 Archiv</button>
+                    <button class="btn-success" onclick="showCreateSessionModal()">+ Neue Session</button>
+                    <button class="btn-secondary btn-icon" onclick="logout()">🚪</button>
+                </div>
+            </div>
+            
+            <div class="filter-bar">
+                <label>Team filtern:</label>
+                <select id="teamFilter" onchange="filterSessions()">
+                    <option value="all">Alle Teams</option>
+                    <option value="Brand Design">Brand Design</option>
+                    <option value="Campaign Design">Campaign Design</option>
+                    <option value="Media Production">Media Production</option>
+                    <option value="Individuell">Individuell</option>
+                </select>
+            </div>
+            
+            <div id="sessionsList" class="sessions-grid"></div>
+        </div>
+    </div>
+
+    <!-- Sprint Planning Detail View -->
+    <div id="planningView" class="view">
+        <div class="container">
+            <div class="header">
+                <div>
+                    <button class="btn-secondary" onclick="backToSessions()">← Zurück</button>
+                    <h1 style="display: inline-block; margin-left: 1rem;" id="sessionTitle"></h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-success" onclick="showFinalOverview()">📊 Finale Übersicht</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="input-row" style="margin-bottom: 1rem;">
+                    <input type="text" id="newPersonInput" placeholder="Person hinzufügen..." style="flex: 1;">
+                    <button class="btn-primary" onclick="addPerson()">+ Person</button>
+                </div>
+            </div>
+            
+            <div id="peopleTabsContainer"></div>
+            <div id="personDetailContainer"></div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Session Modal -->
+    <div id="sessionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Neue Sprintplanung</h2>
+                <button class="modal-close" onclick="closeSessionModal()">✕</button>
+            </div>
+            <form id="sessionForm">
+                <div class="form-group">
+                    <label>Team</label>
+                    <select id="sessionTeam" required>
+                        <option value="Brand Design">Brand Design</option>
+                        <option value="Campaign Design">Campaign Design</option>
+                        <option value="Media Production">Media Production</option>
+                        <option value="Individuell">Individuell</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Startdatum</label>
+                    <input type="date" id="sessionDateFrom" required>
+                </div>
+                <div class="form-group">
+                    <label>Enddatum</label>
+                    <input type="date" id="sessionDateTo" required>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="button" class="btn-secondary" onclick="closeSessionModal()" style="flex: 1;">Abbrechen</button>
+                    <button type="submit" class="btn-primary" style="flex: 1;">Erstellen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Final Overview Modal -->
+    <div id="overviewModal" class="modal">
+        <div class="modal-content" style="max-width: 1400px;">
+            <div class="modal-header">
+                <h2>Finale Übersicht</h2>
+                <button class="modal-close" onclick="closeFinalOverview()">✕</button>
+            </div>
+            <div id="overviewContent"></div>
+        </div>
+    </div>
+
+    <!-- Archive View Modal -->
+    <div id="archiveModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Archiv</h2>
+                <button class="modal-close" onclick="closeArchive()">✕</button>
+            </div>
+            <div id="archiveContent"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+        /**
+         * Sprintplanung Tool mit Firebase
+         * 
+         * Security Features:
+         * - Firebase Authentication (Email/Password)
+         * - XSS Protection: All user inputs are HTML-escaped
+         * - Input Validation: Numeric values validated
+         * - Firestore Security Rules protect data
+         */
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDe7nPu3R6mQ_5uiUSwgj01aI-2aV4jYrM",
+            authDomain: "fo-sprintplanung.firebaseapp.com",
+            projectId: "fo-sprintplanung",
+            storageBucket: "fo-sprintplanung.firebasestorage.app",
+            messagingSenderId: "668937676510",
+            appId: "1:668937676510:web:213019aeccec4d29ec844f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // T-Shirt Sizes
+        const TSHIRT_SIZES = { 'XXL': 32, 'XL': 16, 'L': 8, 'M': 4, 'S': 2, 'XS': 1 };
+
+        // Global State
+        let currentUser = null;
+        let currentView = 'login';
+        let currentSession = null;
+        let sessions = [];
+        let people = [];
+        let activePersonTab = null;
+        let newPersonName = '';
+
+        // XSS Protection
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // View Management
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewName + 'View').classList.add('active');
+            currentView = viewName;
+        }
+
+        // Auth State Observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('userEmail').textContent = user.email;
+                showView('sessions');
+                loadSessions();
+            } else {
+                currentUser = null;
+                showView('login');
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                errorDiv.classList.remove('show');
+            } catch (error) {
+                errorDiv.textContent = 'Login fehlgeschlagen. Bitte prüfe deine Zugangsdaten.';
+                errorDiv.classList.add('show');
+            }
+        });
+
+        // Logout
+        window.logout = async () => {
+            await signOut(auth);
+        };
+
+        // Load Sessions
+        async function loadSessions() {
+            try {
+                const sessionsRef = collection(db, 'sessions');
+                const q = query(sessionsRef, where('status', '==', 'active'), orderBy('createdAt', 'desc'));
+                const snapshot = await getDocs(q);
+                sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderSessions();
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+            }
+        }
+
+        // Filter Sessions
+        window.filterSessions = () => {
+            renderSessions();
+        };
+
+        // Render Sessions
+        function renderSessions() {
+            const container = document.getElementById('sessionsList');
+            const teamFilter = document.getElementById('teamFilter').value;
+            
+            let filteredSessions = sessions;
+            if (teamFilter !== 'all') {
+                filteredSessions = sessions.filter(s => s.team === teamFilter);
+            }
+            
+            if (filteredSessions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Keine Sprintplanungen vorhanden.</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filteredSessions.map(session => {
+                const teamClass = session.team.toLowerCase().replace(' ', '-');
+                const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                return `
+                    <div class="session-card" onclick="openSession('${session.id}')">
+                        <div class="session-header">
+                            <span class="team-badge team-${teamClass.includes('brand') ? 'brand' : teamClass.includes('campaign') ? 'campaign' : teamClass.includes('media') ? 'media' : 'custom'}">${escapeHtml(session.team)}</span>
+                        </div>
+                        <div class="session-date">📅 ${dateFrom} - ${dateTo}</div>
+                        <div class="session-meta">Erstellt: ${new Date(session.createdAt).toLocaleDateString('de-DE')}</div>
+                        <div class="session-actions" onclick="event.stopPropagation()">
+                            <button class="btn-secondary" onclick="openSession('${session.id}')">Öffnen</button>
+                            <button class="btn-secondary" onclick="archiveSession('${session.id}')">Archivieren</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Create Session Modal
+        window.showCreateSessionModal = () => {
+            document.getElementById('modalTitle').textContent = 'Neue Sprintplanung';
+            document.getElementById('sessionForm').reset();
+            document.getElementById('sessionModal').classList.add('active');
+        };
+
+        window.closeSessionModal = () => {
+            document.getElementById('sessionModal').classList.remove('active');
+        };
+
+        // Create Session
+        document.getElementById('sessionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const team = document.getElementById('sessionTeam').value;
+            const dateFrom = document.getElementById('sessionDateFrom').value;
+            const dateTo = document.getElementById('sessionDateTo').value;
+            
+            const sessionData = {
+                team,
+                dateFrom,
+                dateTo,
+                status: 'active',
+                createdAt: Date.now(),
+                lastModified: Date.now(),
+                createdBy: currentUser.uid,
+                data: {
+                    people: []
+                }
+            };
+            
+            try {
+                const newSessionRef = doc(collection(db, 'sessions'));
+                await setDoc(newSessionRef, sessionData);
+                closeSessionModal();
+                await loadSessions();
+            } catch (error) {
+                console.error('Error creating session:', error);
+                alert('Fehler beim Erstellen der Session');
+            }
+        });
+
+        // Open Session
+        window.openSession = async (sessionId) => {
+            try {
+                const sessionDoc = await getDoc(doc(db, 'sessions', sessionId));
+                if (sessionDoc.exists()) {
+                    currentSession = { id: sessionDoc.id, ...sessionDoc.data() };
+                    people = currentSession.data.people || [];
+                    activePersonTab = people.length > 0 ? people[0].id : null;
+                    
+                    const dateFrom = new Date(currentSession.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                    const dateTo = new Date(currentSession.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    document.getElementById('sessionTitle').textContent = `${currentSession.team} · ${dateFrom} - ${dateTo}`;
+                    
+                    showView('planning');
+                    renderPlanningView();
+                }
+            } catch (error) {
+                console.error('Error opening session:', error);
+            }
+        };
+
+        // Back to Sessions
+        window.backToSessions = () => {
+            currentSession = null;
+            people = [];
+            showView('sessions');
+        };
+
+        // Archive Session
+        window.archiveSession = async (sessionId) => {
+            if (!confirm('Session wirklich archivieren?')) return;
+            
+            try {
+                await updateDoc(doc(db, 'sessions', sessionId), {
+                    status: 'archived',
+                    archivedAt: Date.now()
+                });
+                await loadSessions();
+            } catch (error) {
+                console.error('Error archiving session:', error);
+            }
+        };
+
+        // Show Archive
+        window.showArchive = async () => {
+            try {
+                const sessionsRef = collection(db, 'sessions');
+                const q = query(sessionsRef, where('status', '==', 'archived'), orderBy('archivedAt', 'desc'));
+                const snapshot = await getDocs(q);
+                const archivedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const content = document.getElementById('archiveContent');
+                if (archivedSessions.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><p>Keine archivierten Sessions.</p></div>';
+                } else {
+                    content.innerHTML = archivedSessions.map(session => {
+                        const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE');
+                        const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE');
+                        return `
+                            <div class="session-card" style="margin-bottom: 1rem;">
+                                <div><strong>${escapeHtml(session.team)}</strong></div>
+                                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${dateFrom} - ${dateTo}</div>
+                                <div style="margin-top: 0.75rem;">
+                                    <button class="btn-danger btn-small" onclick="deleteSession('${session.id}')">Endgültig löschen</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                document.getElementById('archiveModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading archive:', error);
+            }
+        };
+
+        window.closeArchive = () => {
+            document.getElementById('archiveModal').classList.remove('active');
+        };
+
+        // Delete Session
+        window.deleteSession = async (sessionId) => {
+            if (!confirm('Session wirklich ENDGÜLTIG löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) return;
+            
+            try {
+                await deleteDoc(doc(db, 'sessions', sessionId));
+                showArchive(); // Reload archive
+            } catch (error) {
+                console.error('Error deleting session:', error);
+            }
+        };
+
+        // Save Session Data
+        async function saveSessionData() {
+            if (!currentSession) return;
+            
+            try {
+                await updateDoc(doc(db, 'sessions', currentSession.id), {
+                    'data.people': people,
+                    lastModified: Date.now()
+                });
+            } catch (error) {
+                console.error('Error saving session:', error);
+            }
+        }
+
+        // Render Planning View
+        function renderPlanningView() {
+            renderPeopleTabs();
+            renderPersonDetail();
+        }
+
+        // Render People Tabs
+        function renderPeopleTabs() {
+            const container = document.getElementById('peopleTabsContainer');
+            if (people.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="tabs">
+                    ${people.map(person => `
+                        <div class="tab ${activePersonTab === person.id ? 'active' : ''}" onclick="setActivePersonTab(${person.id})">
+                            ${escapeHtml(person.name)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Set Active Person Tab
+        window.setActivePersonTab = (personId) => {
+            activePersonTab = personId;
+            renderPersonDetail();
+            renderPeopleTabs();
+        };
+
+        // Add Person
+        window.addPerson = () => {
+            const input = document.getElementById('newPersonInput');
+            const name = input.value.trim();
+            
+            if (!name) return;
+            
+            const newPerson = {
+                id: Date.now(),
+                name: name,
+                weeks: {
+                    1: { kontingent: 40, puffer: 0.8, tasks: [] },
+                    2: { kontingent: 40, puffer: 0.8, tasks: [] }
+                }
+            };
+            
+            people.push(newPerson);
+            activePersonTab = newPerson.id;
+            input.value = '';
+            
+            saveSessionData();
+            renderPlanningView();
+            
+            setTimeout(() => input.focus(), 0);
+        };
+
+        // Delete Person
+        window.deletePerson = (personId) => {
+            if (!confirm('Person wirklich löschen?')) return;
+            
+            people = people.filter(p => p.id !== personId);
+            if (activePersonTab === personId) {
+                activePersonTab = people.length > 0 ? people[0].id : null;
+            }
+            
+            saveSessionData();
+            renderPlanningView();
+        };
+
+        // Render Person Detail
+        function renderPersonDetail() {
+            const container = document.getElementById('personDetailContainer');
+            
+            if (!activePersonTab) {
+                container.innerHTML = '<div class="empty-state"><p>Keine Person ausgewählt. Füge eine Person hinzu!</p></div>';
+                return;
+            }
+            
+            const person = people.find(p => p.id === activePersonTab);
+            if (!person) return;
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.4rem; font-weight: 600; color: #ffffff;">${escapeHtml(person.name)}</h2>
+                        <button class="btn-danger" onclick="deletePerson(${person.id})">Person löschen</button>
+                    </div>
+                    
+                    <div class="weeks-grid">
+                        ${renderWeek(person, 1)}
+                        ${renderWeek(person, 2)}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render Week
+        function renderWeek(person, week) {
+            const weekData = person.weeks[week];
+            const effectiveKontingent = weekData.kontingent * weekData.puffer;
+            const usedHours = calculateUsedHours(weekData.tasks);
+            const remaining = effectiveKontingent - usedHours;
+            const isOverload = remaining < 0;
+            const percentage = Math.min(100, (usedHours / effectiveKontingent) * 100);
+            const barColor = percentage < 70 ? '#30d158' : percentage < 90 ? '#ffd60a' : '#ff453a';
+            
+            return `
+                <div class="week-card">
+                    <div class="week-title">Woche ${week}</div>
+                    
+                    <div class="input-row">
+                        <span class="label">Kontingent:</span>
+                        <input type="number" value="${weekData.kontingent}" style="width: 70px;"
+                               onchange="updateKontingent(${person.id}, ${week}, this.value)" />
+                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">h</span>
+                        <span class="label" style="min-width: 50px;">Puffer:</span>
+                        <input type="number" step="0.1" value="${weekData.puffer}" style="width: 70px;"
+                               onchange="updatePuffer(${person.id}, ${week}, this.value)" />
+                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">×</span>
+                    </div>
+                    
+                    <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.7); display: flex; justify-content: space-between;">
+                        <span>Effektiv: <strong style="color: #ffffff;">${effectiveKontingent.toFixed(1)}h</strong></span>
+                        <span>Verplant: <strong style="color: #ffffff;">${usedHours}h</strong></span>
+                        <span style="color: ${isOverload ? '#ff453a' : '#30d158'};">Verfügbar: <strong>${remaining.toFixed(1)}h</strong></span>
+                    </div>
+                    
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="background: ${barColor}; width: ${percentage}%;"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 0.75rem;">
+                        ${weekData.tasks.map(task => renderTask(person.id, week, task)).join('')}
+                    </div>
+                    
+                    <button class="btn-primary" style="width: 100%;" onclick="addTask(${person.id}, ${week})">+ Aufgabe</button>
+                </div>
+            `;
+        }
+
+        // Render Task
+        function renderTask(personId, week, task) {
+            const otherWeek = week === 1 ? 2 : 1;
+            const totalHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
+            
+            return `
+                <div class="task-item">
+                    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                        ${Object.keys(TSHIRT_SIZES).map(size => `
+                            <button class="size-btn ${task.sizes.includes(size) ? 'active' : ''}"
+                                    onclick="toggleSize(${personId}, ${week}, ${task.id}, '${size}')">
+                                ${size}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600; min-width: 35px; text-align: center;">
+                        ${totalHours}h
+                    </div>
+                    <input type="text" style="flex: 1; min-width: 80px; font-size: 0.85rem; padding: 0.4rem 0.65rem; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #e8e8e8;" 
+                           placeholder="Projekt..." 
+                           value="${escapeHtml(task.description)}"
+                           id="task-${personId}-${week}-${task.id}"
+                           onblur="updateTaskDescription(${personId}, ${week}, ${task.id}, this.value)" />
+                    <button class="btn-secondary" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem;" 
+                            onclick="moveTask(${personId}, ${week}, ${task.id}, ${otherWeek})">→${otherWeek}</button>
+                    <button class="btn-danger" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem;" 
+                            onclick="deleteTask(${personId}, ${week}, ${task.id})">✕</button>
+                </div>
+            `;
+        }
+
+        // Calculate Used Hours
+        function calculateUsedHours(tasks) {
+            return tasks.reduce((sum, task) => {
+                return sum + task.sizes.reduce((taskSum, size) => taskSum + TSHIRT_SIZES[size], 0);
+            }, 0);
+        }
+
+        // Update Kontingent
+        window.updateKontingent = (personId, week, value) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                const numValue = parseFloat(value);
+                person.weeks[week].kontingent = (numValue >= 0) ? numValue : 0;
+                saveSessionData();
+                renderPersonDetail();
+            }
+        };
+
+        // Update Puffer
+        window.updatePuffer = (personId, week, value) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                const numValue = parseFloat(value);
+                person.weeks[week].puffer = (numValue >= 0 && numValue <= 2) ? numValue : 0.8;
+                saveSessionData();
+                renderPersonDetail();
+            }
+        };
+
+        // Add Task
+        window.addTask = (personId, week) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                person.weeks[week].tasks.push({
+                    id: Date.now(),
+                    sizes: [],
+                    description: ''
+                });
+                saveSessionData();
+                renderPersonDetail();
+            }
+        };
+
+        // Toggle Size
+        window.toggleSize = (personId, week, taskId, size) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                const task = person.weeks[week].tasks.find(t => t.id === taskId);
+                if (task) {
+                    const index = task.sizes.indexOf(size);
+                    if (index > -1) {
+                        task.sizes.splice(index, 1);
+                    } else {
+                        task.sizes.push(size);
+                    }
+                    saveSessionData();
+                    renderPersonDetail();
+                }
+            }
+        };
+
+        // Update Task Description
+        window.updateTaskDescription = (personId, week, taskId, value) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                const task = person.weeks[week].tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.description = value;
+                    saveSessionData();
+                }
+            }
+        };
+
+        // Delete Task
+        window.deleteTask = (personId, week, taskId) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                person.weeks[week].tasks = person.weeks[week].tasks.filter(t => t.id !== taskId);
+                saveSessionData();
+                renderPersonDetail();
+            }
+        };
+
+        // Move Task
+        window.moveTask = (personId, fromWeek, taskId, toWeek) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                const taskIndex = person.weeks[fromWeek].tasks.findIndex(t => t.id === taskId);
+                if (taskIndex !== -1) {
+                    const task = person.weeks[fromWeek].tasks[taskIndex];
+                    person.weeks[fromWeek].tasks.splice(taskIndex, 1);
+                    person.weeks[toWeek].tasks.push(task);
+                    saveSessionData();
+                    renderPersonDetail();
+                }
+            }
+        };
+
+        // Show Final Overview
+        window.showFinalOverview = () => {
+            const content = document.getElementById('overviewContent');
+            
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); max-width: 1000px; gap: 1.25rem;">
+                    ${people.map(person => {
+                        return `
+                            <div style="border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; background: rgba(255,255,255,0.06);">
+                                <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; color: #ffffff;">${escapeHtml(person.name)}</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                                    ${[1, 2].map(week => {
+                                        const weekData = person.weeks[week];
+                                        const effectiveKontingent = weekData.kontingent * weekData.puffer;
+                                        const usedHours = calculateUsedHours(weekData.tasks);
+                                        const remaining = effectiveKontingent - usedHours;
+                                        const isOverload = remaining < 0;
+                                        
+                                        return `
+                                            <div style="background: rgba(255,255,255,0.04); padding: 0.75rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                                                <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.8);">Woche ${week}</div>
+                                                <div style="font-size: 0.7rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.6);">
+                                                    ${weekData.kontingent}h × ${weekData.puffer} = ${effectiveKontingent.toFixed(1)}h | 
+                                                    ${usedHours}h | 
+                                                    <span style="color: ${isOverload ? '#ff453a' : '#30d158'}; font-weight: 600;">
+                                                        ${remaining.toFixed(1)}h
+                                                    </span>
+                                                </div>
+                                                ${weekData.tasks.map(task => {
+                                                    const taskHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
+                                                    const sizeStr = task.sizes.join('+') || '-';
+                                                    const description = escapeHtml(task.description.trim());
+                                                    return `
+                                                        <div style="display: flex; justify-content: space-between; padding: 0.3rem 0; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08); gap: 0.5rem; color: rgba(255,255,255,0.7);">
+                                                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">
+                                                                <strong>${sizeStr}</strong> ${description}
+                                                            </span>
+                                                            <span style="white-space: nowrap; flex-shrink: 0;">${taskHours}h</span>
+                                                        </div>
+                                                    `;
+                                                }).join('')}
+                                                ${weekData.tasks.length === 0 ? '<div style="color: rgba(255,255,255,0.4); font-size: 0.7rem; text-align: center; padding: 0.5rem 0;">Keine Aufgaben</div>' : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            document.getElementById('overviewModal').classList.add('active');
+        };
+
+        window.closeFinalOverview = () => {
+            document.getElementById('overviewModal').classList.remove('active');
+        };
+
+        // Allow Enter key in person input
+        document.getElementById('newPersonInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addPerson();
+            }
+        });
+
+        // Initial state
+        showView('login');
+    </script>
+</body>
+</html>
