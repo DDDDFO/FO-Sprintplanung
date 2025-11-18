@@ -97,6 +97,38 @@
         
         .error-message.show { display: block; }
         
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(48, 209, 88, 0.15);
+            border: 1px solid rgba(48, 209, 88, 0.3);
+            border-radius: 8px;
+            color: #30d158;
+        }
+        
+        .status-indicator.syncing {
+            background: rgba(255, 193, 7, 0.15);
+            border-color: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
         /* Header */
         .header {
             display: flex;
@@ -104,6 +136,8 @@
             align-items: center;
             margin-bottom: 2rem;
             padding: 0 0.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         h1 {
@@ -117,6 +151,7 @@
             display: flex;
             gap: 0.75rem;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .user-info {
@@ -351,6 +386,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 0;
         }
         
         .modal-close:hover {
@@ -366,6 +402,8 @@
         
         @media (max-width: 768px) {
             .weeks-grid { grid-template-columns: 1fr; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar select { min-width: auto; width: 100%; }
         }
         
         .week-card {
@@ -388,6 +426,7 @@
             gap: 0.75rem;
             margin-bottom: 0.75rem;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .label {
@@ -448,6 +487,7 @@
             margin-bottom: 0.5rem;
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease;
+            flex-wrap: wrap;
         }
         
         .task-item:hover {
@@ -568,10 +608,14 @@
             <div class="header">
                 <h1>Sprintplanung</h1>
                 <div class="header-actions">
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span id="syncStatus">Synchronisiert</span>
+                    </div>
                     <span class="user-info" id="userEmail"></span>
                     <button class="btn-secondary" onclick="showArchive()">📦 Archiv</button>
                     <button class="btn-success" onclick="showCreateSessionModal()">+ Neue Session</button>
-                    <button class="btn-secondary btn-icon" onclick="logout()">🚪</button>
+                    <button class="btn-secondary btn-icon" onclick="logout()" title="Abmelden">🚪</button>
                 </div>
             </div>
             
@@ -599,6 +643,10 @@
                     <h1 style="display: inline-block; margin-left: 1rem;" id="sessionTitle"></h1>
                 </div>
                 <div class="header-actions">
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span id="planingSyncStatus">Synchronisiert</span>
+                    </div>
                     <button class="btn-success" onclick="showFinalOverview()">📊 Finale Übersicht</button>
                 </div>
             </div>
@@ -674,16 +722,14 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
-        import { getFirestore, collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        import { getFirestore, collection, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
         /**
          * Sprintplanung Tool mit Firebase
-         * 
-         * Security Features:
-         * - Firebase Authentication (Email/Password)
-         * - XSS Protection: All user inputs are HTML-escaped
-         * - Input Validation: Numeric values validated
-         * - Firestore Security Rules protect data
+         * ✅ Echtzeit-Updates (Real-Time Sync)
+         * ✅ Mehrere User können sich anmelden
+         * ✅ Automatische Synchronisation zwischen Clients
+         * ✅ XSS Protection & Input Validation
          */
 
         // Firebase Configuration
@@ -711,7 +757,9 @@
         let sessions = [];
         let people = [];
         let activePersonTab = null;
-        let newPersonName = '';
+        let sessionsListener = null;
+        let currentSessionListener = null;
+        let isSyncing = false;
 
         // XSS Protection
         function escapeHtml(unsafe) {
@@ -722,6 +770,22 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        // Update Sync Status
+        function updateSyncStatus(syncing = false) {
+            isSyncing = syncing;
+            const indicator = document.getElementById('syncStatus');
+            const planningIndicator = document.getElementById('planingSyncStatus');
+            
+            if (indicator) {
+                indicator.textContent = syncing ? 'Synchronisiere...' : 'Synchronisiert';
+                indicator.parentElement.classList.toggle('syncing', syncing);
+            }
+            if (planningIndicator) {
+                planningIndicator.textContent = syncing ? 'Synchronisiere...' : 'Synchronisiert';
+                planningIndicator.parentElement.classList.toggle('syncing', syncing);
+            }
         }
 
         // View Management
@@ -762,19 +826,34 @@
 
         // Logout
         window.logout = async () => {
+            if (sessionsListener) sessionsListener();
+            if (currentSessionListener) currentSessionListener();
+            if (window.archiveUnsubscribe) window.archiveUnsubscribe();
+            
+            sessionsListener = null;
+            currentSessionListener = null;
+            window.archiveUnsubscribe = null;
+            
             await signOut(auth);
         };
 
-        // Load Sessions
-        async function loadSessions() {
+        // Load Sessions with Real-Time Updates
+        function loadSessions() {
+            if (sessionsListener) sessionsListener();
+            
             try {
                 const sessionsRef = collection(db, 'sessions');
                 const q = query(sessionsRef, where('status', '==', 'active'), orderBy('createdAt', 'desc'));
-                const snapshot = await getDocs(q);
-                sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderSessions();
+                
+                sessionsListener = onSnapshot(q, (snapshot) => {
+                    sessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderSessions();
+                    updateSyncStatus(false);
+                }, (error) => {
+                    console.error('Error loading sessions:', error);
+                });
             } catch (error) {
-                console.error('Error loading sessions:', error);
+                console.error('Error setting up sessions listener:', error);
             }
         }
 
@@ -799,16 +878,15 @@
             }
             
             container.innerHTML = filteredSessions.map(session => {
-                const teamClass = session.team.toLowerCase().replace(' ', '-');
+                const teamClass = session.team.toLowerCase().replace(/ /g, '-');
                 const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
                 const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                // Personen-Übersicht generieren
                 const peopleList = session.data?.people || [];
                 const peopleHtml = peopleList.length > 0 ? `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">Personen:</div>
-                        ${peopleList.map(person => {
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">👥 ${peopleList.length} Person${peopleList.length !== 1 ? 'en' : ''}</div>
+                        ${peopleList.slice(0, 3).map(person => {
                             const week1Data = person.weeks[1];
                             const week2Data = person.weeks[2];
                             const week1Effective = week1Data.kontingent * week1Data.puffer;
@@ -820,19 +898,22 @@
                                 <div style="margin-bottom: 0.5rem; font-size: 0.75rem;">
                                     <div style="font-weight: 600; color: #ffffff; margin-bottom: 0.15rem;">• ${escapeHtml(person.name)}</div>
                                     <div style="padding-left: 0.75rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
-                                        <span>W1: ${week1Used}h / ${week1Effective.toFixed(0)}h</span>
-                                        <span style="margin-left: 1rem;">W2: ${week2Used}h / ${week2Effective.toFixed(0)}h</span>
+                                        <span>W1: ${week1Used}h/${week1Effective.toFixed(0)}h</span>
+                                        <span style="margin-left: 1rem;">W2: ${week2Used}h/${week2Effective.toFixed(0)}h</span>
                                     </div>
                                 </div>
                             `;
                         }).join('')}
+                        ${peopleList.length > 3 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">+ ${peopleList.length - 3} weitere</div>` : ''}
                     </div>
                 ` : '<div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic;">Keine Personen</div>';
+                
+                const teamBadgeClass = teamClass.includes('brand') ? 'team-brand' : teamClass.includes('campaign') ? 'team-campaign' : teamClass.includes('media') ? 'team-media' : 'team-custom';
                 
                 return `
                     <div class="session-card" onclick="openSession('${session.id}')">
                         <div class="session-header">
-                            <span class="team-badge team-${teamClass.includes('brand') ? 'brand' : teamClass.includes('campaign') ? 'campaign' : teamClass.includes('media') ? 'media' : 'custom'}">${escapeHtml(session.team)}</span>
+                            <span class="team-badge ${teamBadgeClass}">${escapeHtml(session.team)}</span>
                         </div>
                         <div class="session-date">📅 ${dateFrom} - ${dateTo}</div>
                         <div class="session-meta">Erstellt: ${new Date(session.createdAt).toLocaleDateString('de-DE')}</div>
@@ -846,7 +927,7 @@
             }).join('');
         }
 
-        // Create Session Modal
+        // Show Create Session Modal
         window.showCreateSessionModal = () => {
             document.getElementById('modalTitle').textContent = 'Neue Sprintplanung';
             document.getElementById('sessionForm').reset();
@@ -860,6 +941,7 @@
         // Create Session
         document.getElementById('sessionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            updateSyncStatus(true);
             
             const team = document.getElementById('sessionTeam').value;
             const dateFrom = document.getElementById('sessionDateFrom').value;
@@ -882,29 +964,42 @@
                 const newSessionRef = doc(collection(db, 'sessions'));
                 await setDoc(newSessionRef, sessionData);
                 closeSessionModal();
-                await loadSessions();
             } catch (error) {
                 console.error('Error creating session:', error);
                 alert('Fehler beim Erstellen der Session');
             }
+            updateSyncStatus(false);
         });
 
-        // Open Session
+        // Open Session with Real-Time Updates
         window.openSession = async (sessionId) => {
+            if (currentSessionListener) currentSessionListener();
+            
             try {
-                const sessionDoc = await getDoc(doc(db, 'sessions', sessionId));
-                if (sessionDoc.exists()) {
-                    currentSession = { id: sessionDoc.id, ...sessionDoc.data() };
-                    people = currentSession.data.people || [];
-                    activePersonTab = people.length > 0 ? people[0].id : null;
-                    
-                    const dateFrom = new Date(currentSession.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                    const dateTo = new Date(currentSession.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    document.getElementById('sessionTitle').textContent = `${currentSession.team} · ${dateFrom} - ${dateTo}`;
-                    
-                    showView('planning');
-                    renderPlanningView();
-                }
+                const sessionDocRef = doc(db, 'sessions', sessionId);
+                
+                currentSessionListener = onSnapshot(sessionDocRef, (sessionDoc) => {
+                    if (sessionDoc.exists()) {
+                        currentSession = { id: sessionDoc.id, ...sessionDoc.data() };
+                        people = currentSession.data.people || [];
+                        
+                        if (activePersonTab && !people.find(p => p.id === activePersonTab)) {
+                            activePersonTab = people.length > 0 ? people[0].id : null;
+                        } else if (!activePersonTab && people.length > 0) {
+                            activePersonTab = people[0].id;
+                        }
+                        
+                        const dateFrom = new Date(currentSession.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                        const dateTo = new Date(currentSession.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        document.getElementById('sessionTitle').textContent = `${currentSession.team} · ${dateFrom} - ${dateTo}`;
+                        
+                        renderPlanningView();
+                        if (currentView !== 'planning') showView('planning');
+                        updateSyncStatus(false);
+                    }
+                }, (error) => {
+                    console.error('Error loading session:', error);
+                });
             } catch (error) {
                 console.error('Error opening session:', error);
             }
@@ -912,8 +1007,14 @@
 
         // Back to Sessions
         window.backToSessions = () => {
+            if (currentSessionListener) {
+                currentSessionListener();
+                currentSessionListener = null;
+            }
+            
             currentSession = null;
             people = [];
+            activePersonTab = null;
             showView('sessions');
         };
 
@@ -921,51 +1022,65 @@
         window.archiveSession = async (sessionId) => {
             if (!confirm('Session wirklich archivieren?')) return;
             
+            updateSyncStatus(true);
             try {
                 await updateDoc(doc(db, 'sessions', sessionId), {
                     status: 'archived',
                     archivedAt: Date.now()
                 });
-                await loadSessions();
             } catch (error) {
                 console.error('Error archiving session:', error);
             }
+            updateSyncStatus(false);
         };
 
         // Show Archive
-        window.showArchive = async () => {
+        window.showArchive = () => {
+            const content = document.getElementById('archiveContent');
+            content.innerHTML = '<div class="loading">Lade Archiv...</div>';
+            
             try {
                 const sessionsRef = collection(db, 'sessions');
                 const q = query(sessionsRef, where('status', '==', 'archived'), orderBy('archivedAt', 'desc'));
-                const snapshot = await getDocs(q);
-                const archivedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
-                const content = document.getElementById('archiveContent');
-                if (archivedSessions.length === 0) {
-                    content.innerHTML = '<div class="empty-state"><p>Keine archivierten Sessions.</p></div>';
-                } else {
-                    content.innerHTML = archivedSessions.map(session => {
-                        const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE');
-                        const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE');
-                        return `
-                            <div class="session-card" style="margin-bottom: 1rem;">
-                                <div><strong>${escapeHtml(session.team)}</strong></div>
-                                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${dateFrom} - ${dateTo}</div>
-                                <div style="margin-top: 0.75rem;">
-                                    <button class="btn-danger btn-small" onclick="deleteSession('${session.id}')">Endgültig löschen</button>
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const archivedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    
+                    if (archivedSessions.length === 0) {
+                        content.innerHTML = '<div class="empty-state"><p>Keine archivierten Sessions.</p></div>';
+                    } else {
+                        content.innerHTML = archivedSessions.map(session => {
+                            const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE');
+                            const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE');
+                            return `
+                                <div class="session-card" style="margin-bottom: 1rem;">
+                                    <div><strong>${escapeHtml(session.team)}</strong></div>
+                                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${dateFrom} - ${dateTo}</div>
+                                    <div style="margin-top: 0.75rem;">
+                                        <button class="btn-danger" onclick="deleteSession('${session.id}')">Endgültig löschen</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
+                            `;
+                        }).join('');
+                    }
+                }, (error) => {
+                    console.error('Error loading archive:', error);
+                    content.innerHTML = '<div class="empty-state"><p>Fehler beim Laden des Archivs.</p></div>';
+                });
                 
+                window.archiveUnsubscribe = unsubscribe;
                 document.getElementById('archiveModal').classList.add('active');
             } catch (error) {
                 console.error('Error loading archive:', error);
+                content.innerHTML = '<div class="empty-state"><p>Fehler beim Laden des Archivs.</p></div>';
             }
         };
 
         window.closeArchive = () => {
+            if (window.archiveUnsubscribe) {
+                window.archiveUnsubscribe();
+                window.archiveUnsubscribe = null;
+            }
             document.getElementById('archiveModal').classList.remove('active');
         };
 
@@ -973,18 +1088,21 @@
         window.deleteSession = async (sessionId) => {
             if (!confirm('Session wirklich ENDGÜLTIG löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) return;
             
+            updateSyncStatus(true);
             try {
                 await deleteDoc(doc(db, 'sessions', sessionId));
-                showArchive(); // Reload archive
+                showArchive();
             } catch (error) {
                 console.error('Error deleting session:', error);
             }
+            updateSyncStatus(false);
         };
 
         // Save Session Data
         async function saveSessionData() {
             if (!currentSession) return;
             
+            updateSyncStatus(true);
             try {
                 await updateDoc(doc(db, 'sessions', currentSession.id), {
                     'data.people': people,
@@ -992,6 +1110,7 @@
                 });
             } catch (error) {
                 console.error('Error saving session:', error);
+                updateSyncStatus(false);
             }
         }
 
@@ -1023,8 +1142,8 @@
         // Set Active Person Tab
         window.setActivePersonTab = (personId) => {
             activePersonTab = personId;
-            renderPersonDetail();
             renderPeopleTabs();
+            renderPersonDetail();
         };
 
         // Add Person
@@ -1080,7 +1199,7 @@
             
             container.innerHTML = `
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                         <h2 style="font-size: 1.4rem; font-weight: 600; color: #ffffff;">${escapeHtml(person.name)}</h2>
                         <button class="btn-danger" onclick="deletePerson(${person.id})">Person löschen</button>
                     </div>
@@ -1118,7 +1237,7 @@
                         <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">×</span>
                     </div>
                     
-                    <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.7); display: flex; justify-content: space-between;">
+                    <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.7); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                         <span>Effektiv: <strong style="color: #ffffff;">${effectiveKontingent.toFixed(1)}h</strong></span>
                         <span>Verplant: <strong style="color: #ffffff;">${usedHours}h</strong></span>
                         <span style="color: ${isOverload ? '#ff453a' : '#30d158'};">Verfügbar: <strong>${remaining.toFixed(1)}h</strong></span>
@@ -1144,7 +1263,7 @@
             
             return `
                 <div class="task-item">
-                    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; min-width: 0;">
                         ${Object.keys(TSHIRT_SIZES).map(size => `
                             <button class="size-btn ${task.sizes.includes(size) ? 'active' : ''}"
                                     onclick="toggleSize(${personId}, ${week}, ${task.id}, '${size}')">
@@ -1152,17 +1271,16 @@
                             </button>
                         `).join('')}
                     </div>
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600; min-width: 35px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600; min-width: 35px; text-align: center; flex-shrink: 0;">
                         ${totalHours}h
                     </div>
                     <input type="text" style="flex: 1; min-width: 80px; font-size: 0.85rem; padding: 0.4rem 0.65rem; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #e8e8e8;" 
                            placeholder="Projekt..." 
                            value="${escapeHtml(task.description)}"
-                           id="task-${personId}-${week}-${task.id}"
                            onblur="updateTaskDescription(${personId}, ${week}, ${task.id}, this.value)" />
-                    <button class="btn-secondary" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem;" 
+                    <button class="btn-secondary" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem; flex-shrink: 0;" 
                             onclick="moveTask(${personId}, ${week}, ${task.id}, ${otherWeek})">→${otherWeek}</button>
-                    <button class="btn-danger" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem;" 
+                    <button class="btn-danger" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem; flex-shrink: 0;" 
                             onclick="deleteTask(${personId}, ${week}, ${task.id})">✕</button>
                 </div>
             `;
@@ -1269,6 +1387,12 @@
         // Show Final Overview
         window.showFinalOverview = () => {
             const content = document.getElementById('overviewContent');
+            
+            if (people.length === 0) {
+                content.innerHTML = '<div class="empty-state"><p>Keine Personen vorhanden.</p></div>';
+                document.getElementById('overviewModal').classList.add('active');
+                return;
+            }
             
             content.innerHTML = `
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); max-width: 1000px; gap: 1.25rem;">
