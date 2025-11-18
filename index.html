@@ -97,38 +97,6 @@
         
         .error-message.show { display: block; }
         
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            padding: 0.5rem 0.75rem;
-            background: rgba(48, 209, 88, 0.15);
-            border: 1px solid rgba(48, 209, 88, 0.3);
-            border-radius: 8px;
-            color: #30d158;
-        }
-        
-        .status-indicator.syncing {
-            background: rgba(255, 193, 7, 0.15);
-            border-color: rgba(255, 193, 7, 0.3);
-            color: #ffc107;
-        }
-        
-        .status-dot {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
         /* Header */
         .header {
             display: flex;
@@ -608,10 +576,6 @@
             <div class="header">
                 <h1>Sprintplanung</h1>
                 <div class="header-actions">
-                    <div class="status-indicator">
-                        <span class="status-dot"></span>
-                        <span id="syncStatus">Synchronisiert</span>
-                    </div>
                     <span class="user-info" id="userEmail"></span>
                     <button class="btn-secondary" onclick="showArchive()">📦 Archiv</button>
                     <button class="btn-success" onclick="showCreateSessionModal()">+ Neue Session</button>
@@ -643,10 +607,6 @@
                     <h1 style="display: inline-block; margin-left: 1rem;" id="sessionTitle"></h1>
                 </div>
                 <div class="header-actions">
-                    <div class="status-indicator">
-                        <span class="status-dot"></span>
-                        <span id="planingSyncStatus">Synchronisiert</span>
-                    </div>
                     <button class="btn-success" onclick="showFinalOverview()">📊 Finale Übersicht</button>
                 </div>
             </div>
@@ -759,7 +719,6 @@
         let activePersonTab = null;
         let sessionsListener = null;
         let currentSessionListener = null;
-        let isSyncing = false;
 
         // XSS Protection
         function escapeHtml(unsafe) {
@@ -774,18 +733,7 @@
 
         // Update Sync Status
         function updateSyncStatus(syncing = false) {
-            isSyncing = syncing;
-            const indicator = document.getElementById('syncStatus');
-            const planningIndicator = document.getElementById('planingSyncStatus');
-            
-            if (indicator) {
-                indicator.textContent = syncing ? 'Synchronisiere...' : 'Synchronisiert';
-                indicator.parentElement.classList.toggle('syncing', syncing);
-            }
-            if (planningIndicator) {
-                planningIndicator.textContent = syncing ? 'Synchronisiere...' : 'Synchronisiert';
-                planningIndicator.parentElement.classList.toggle('syncing', syncing);
-            }
+            // Sync indicator removed - too fast to see anyway
         }
 
         // View Management
@@ -885,8 +833,7 @@
                 const peopleList = session.data?.people || [];
                 const peopleHtml = peopleList.length > 0 ? `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.75rem;">👥 ${peopleList.length} Person${peopleList.length !== 1 ? 'en' : ''}</div>
-                        ${peopleList.slice(0, 3).map((person, idx) => {
+                        ${peopleList.slice(0, 4).map((person, idx) => {
                             const week1Data = person.weeks[1];
                             const week2Data = person.weeks[2];
                             const week1Effective = week1Data.kontingent * week1Data.puffer;
@@ -903,16 +850,16 @@
                             };
                             
                             return `
-                                <div style="font-size: 0.75rem; padding: 0.5rem 0; ${idx < Math.min(3, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.1);' : ''}">
-                                    <div style="color: #ffffff; font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(person.name)}</div>
-                                    <div style="color: rgba(255,255,255,0.7); display: flex; gap: 1rem; flex-wrap: wrap;">
-                                        <span>W1: ${week1Used}h/${week1Effective.toFixed(0)}h <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">(${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h)</span></span>
-                                        <span>W2: ${week2Used}h/${week2Effective.toFixed(0)}h <span style="color: ${getAvailableColor(week2Available)}; font-weight: 600;">(${week2Available > 0 ? '+' : ''}${week2Available.toFixed(0)}h)</span></span>
-                                    </div>
+                                <div style="font-size: 0.75rem; padding: 0.4rem 0; ${idx < Math.min(4, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : ''} display: flex; gap: 0.75rem; align-items: center;">
+                                    <span style="color: #ffffff; font-weight: 600; min-width: 80px;">${escapeHtml(person.name)}</span>
+                                    <span style="color: rgba(255,255,255,0.6);">|</span>
+                                    <span style="color: rgba(255,255,255,0.7);">W1: <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h</span></span>
+                                    <span style="color: rgba(255,255,255,0.6);">|</span>
+                                    <span style="color: rgba(255,255,255,0.7);">W2: <span style="color: ${getAvailableColor(week2Available)}; font-weight: 600;">${week2Available > 0 ? '+' : ''}${week2Available.toFixed(0)}h</span></span>
                                 </div>
                             `;
                         }).join('')}
-                        ${peopleList.length > 3 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); padding-top: 0.5rem;">+ ${peopleList.length - 3} weitere</div>` : ''}
+                        ${peopleList.length > 4 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); padding-top: 0.4rem;">+ ${peopleList.length - 4} weitere</div>` : ''}
                     </div>
                 ` : '<div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic;">Keine Personen</div>';
                 
