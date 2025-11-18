@@ -803,6 +803,32 @@
                 const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
                 const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
+                // Personen-Übersicht generieren
+                const peopleList = session.data?.people || [];
+                const peopleHtml = peopleList.length > 0 ? `
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">Personen:</div>
+                        ${peopleList.map(person => {
+                            const week1Data = person.weeks[1];
+                            const week2Data = person.weeks[2];
+                            const week1Effective = week1Data.kontingent * week1Data.puffer;
+                            const week2Effective = week2Data.kontingent * week2Data.puffer;
+                            const week1Used = calculateUsedHours(week1Data.tasks);
+                            const week2Used = calculateUsedHours(week2Data.tasks);
+                            
+                            return `
+                                <div style="margin-bottom: 0.5rem; font-size: 0.75rem;">
+                                    <div style="font-weight: 600; color: #ffffff; margin-bottom: 0.15rem;">• ${escapeHtml(person.name)}</div>
+                                    <div style="padding-left: 0.75rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
+                                        <span>W1: ${week1Used}h / ${week1Effective.toFixed(0)}h</span>
+                                        <span style="margin-left: 1rem;">W2: ${week2Used}h / ${week2Effective.toFixed(0)}h</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : '<div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic;">Keine Personen</div>';
+                
                 return `
                     <div class="session-card" onclick="openSession('${session.id}')">
                         <div class="session-header">
@@ -810,6 +836,7 @@
                         </div>
                         <div class="session-date">📅 ${dateFrom} - ${dateTo}</div>
                         <div class="session-meta">Erstellt: ${new Date(session.createdAt).toLocaleDateString('de-DE')}</div>
+                        ${peopleHtml}
                         <div class="session-actions" onclick="event.stopPropagation()">
                             <button class="btn-secondary" onclick="openSession('${session.id}')">Öffnen</button>
                             <button class="btn-secondary" onclick="archiveSession('${session.id}')">Archivieren</button>
