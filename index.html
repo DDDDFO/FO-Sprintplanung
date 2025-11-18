@@ -885,26 +885,34 @@
                 const peopleList = session.data?.people || [];
                 const peopleHtml = peopleList.length > 0 ? `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">👥 ${peopleList.length} Person${peopleList.length !== 1 ? 'en' : ''}</div>
-                        ${peopleList.slice(0, 3).map(person => {
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 0.75rem;">👥 ${peopleList.length} Person${peopleList.length !== 1 ? 'en' : ''}</div>
+                        ${peopleList.slice(0, 3).map((person, idx) => {
                             const week1Data = person.weeks[1];
                             const week2Data = person.weeks[2];
                             const week1Effective = week1Data.kontingent * week1Data.puffer;
                             const week2Effective = week2Data.kontingent * week2Data.puffer;
                             const week1Used = calculateUsedHours(week1Data.tasks);
                             const week2Used = calculateUsedHours(week2Data.tasks);
+                            const week1Available = week1Effective - week1Used;
+                            const week2Available = week2Effective - week2Used;
+                            
+                            const getAvailableColor = (available) => {
+                                if (available < 0) return '#ff453a';
+                                if (available === 0) return '#ffc107';
+                                return '#30d158';
+                            };
                             
                             return `
-                                <div style="margin-bottom: 0.5rem; font-size: 0.75rem;">
-                                    <div style="font-weight: 600; color: #ffffff; margin-bottom: 0.15rem;">• ${escapeHtml(person.name)}</div>
-                                    <div style="padding-left: 0.75rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
-                                        <span>W1: ${week1Used}h/${week1Effective.toFixed(0)}h</span>
-                                        <span style="margin-left: 1rem;">W2: ${week2Used}h/${week2Effective.toFixed(0)}h</span>
+                                <div style="font-size: 0.75rem; padding: 0.5rem 0; ${idx < Math.min(3, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.1);' : ''}">
+                                    <div style="color: #ffffff; font-weight: 600; margin-bottom: 0.25rem;">${escapeHtml(person.name)}</div>
+                                    <div style="color: rgba(255,255,255,0.7); display: flex; gap: 1rem; flex-wrap: wrap;">
+                                        <span>W1: ${week1Used}h/${week1Effective.toFixed(0)}h <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">(${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h)</span></span>
+                                        <span>W2: ${week2Used}h/${week2Effective.toFixed(0)}h <span style="color: ${getAvailableColor(week2Available)}; font-weight: 600;">(${week2Available > 0 ? '+' : ''}${week2Available.toFixed(0)}h)</span></span>
                                     </div>
                                 </div>
                             `;
                         }).join('')}
-                        ${peopleList.length > 3 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">+ ${peopleList.length - 3} weitere</div>` : ''}
+                        ${peopleList.length > 3 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); padding-top: 0.5rem;">+ ${peopleList.length - 3} weitere</div>` : ''}
                     </div>
                 ` : '<div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic;">Keine Personen</div>';
                 
@@ -1240,7 +1248,7 @@
                     <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.7); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                         <span>Effektiv: <strong style="color: #ffffff;">${effectiveKontingent.toFixed(1)}h</strong></span>
                         <span>Verplant: <strong style="color: #ffffff;">${usedHours}h</strong></span>
-                        <span style="color: ${isOverload ? '#ff453a' : '#30d158'};">Verfügbar: <strong>${remaining.toFixed(1)}h</strong></span>
+                        <span style="color: ${remaining < 0 ? '#ff453a' : remaining === 0 ? '#ffc107' : '#30d158'}; font-weight: 600;">Verfügbar: ${remaining > 0 ? '+' : ''}${remaining.toFixed(1)}h</span>
                     </div>
                     
                     <div class="progress-bar-container">
@@ -1414,8 +1422,8 @@
                                                 <div style="font-size: 0.7rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.6);">
                                                     ${weekData.kontingent}h × ${weekData.puffer} = ${effectiveKontingent.toFixed(1)}h | 
                                                     ${usedHours}h | 
-                                                    <span style="color: ${isOverload ? '#ff453a' : '#30d158'}; font-weight: 600;">
-                                                        ${remaining.toFixed(1)}h
+                                                    <span style="color: ${remaining < 0 ? '#ff453a' : remaining === 0 ? '#ffc107' : '#30d158'}; font-weight: 600;">
+                                                        ${remaining > 0 ? '+' : ''}${remaining.toFixed(1)}h
                                                     </span>
                                                 </div>
                                                 ${weekData.tasks.map(task => {
