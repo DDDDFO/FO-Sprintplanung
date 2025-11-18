@@ -39,7 +39,7 @@
         
         .login-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
         
         .login-header h1 {
@@ -55,7 +55,7 @@
         }
         
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
         }
         
         .form-group label {
@@ -102,7 +102,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 0.75rem;
             padding: 0 0.5rem;
             flex-wrap: wrap;
             gap: 1rem;
@@ -197,7 +197,7 @@
             backdrop-filter: blur(20px);
             border-radius: 14px;
             padding: 1.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
             border: 1px solid rgba(255, 255, 255, 0.12);
             display: flex;
             gap: 1rem;
@@ -232,14 +232,14 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.25rem;
-            margin-bottom: 2rem;
+            margin-bottom: 0.75rem;
         }
         
         .session-card {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
             border-radius: 14px;
-            padding: 1.5rem;
+            padding: 0.75rem;
             border: 1px solid rgba(255, 255, 255, 0.12);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
@@ -256,7 +256,7 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
         
         .team-badge {
@@ -277,13 +277,13 @@
         .session-date {
             font-size: 0.95rem;
             color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
         
         .session-meta {
             font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
         
         .session-actions {
@@ -333,7 +333,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
         }
         
         .modal-header h2 {
@@ -386,13 +386,13 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: #ffffff;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
         
         .input-row {
             display: flex;
             gap: 0.75rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -433,7 +433,7 @@
             background: rgba(255, 255, 255, 0.08);
             height: 8px;
             border-radius: 10px;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             overflow: hidden;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
@@ -452,7 +452,7 @@
             background: rgba(255, 255, 255, 0.06);
             padding: 0.65rem;
             border-radius: 10px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem;
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease;
             flex-wrap: wrap;
@@ -493,7 +493,7 @@
         .tabs {
             display: flex;
             gap: 0.75rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
             flex-wrap: wrap;
             padding: 0 0.5rem;
         }
@@ -529,8 +529,8 @@
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
         }
         
         .empty-state {
@@ -612,7 +612,7 @@
             </div>
             
             <div class="card">
-                <div class="input-row" style="margin-bottom: 1rem;">
+                <div class="input-row" style="margin-bottom: 0.5rem;">
                     <input type="text" id="newPersonInput" placeholder="Person hinzufügen..." style="flex: 1;">
                     <button class="btn-primary" onclick="addPerson()">+ Person</button>
                 </div>
@@ -832,7 +832,7 @@
                 
                 const peopleList = session.data?.people || [];
                 const peopleHtml = peopleList.length > 0 ? `
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); margin-bottom: 0.75rem;">
                         ${peopleList.slice(0, 4).map((person, idx) => {
                             const week1Data = person.weeks[1];
                             const week2Data = person.weeks[2];
@@ -850,7 +850,7 @@
                             };
                             
                             return `
-                                <div style="font-size: 0.75rem; padding: 0.4rem 0; ${idx < Math.min(4, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : ''} display: flex; gap: 0.75rem; align-items: center;">
+                                <div style="font-size: 0.75rem; padding: 0.4rem 0; ${idx < Math.min(4, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : ''} display: flex; gap: 0.75rem; align-items: center; white-space: nowrap;">
                                     <span style="color: #ffffff; font-weight: 600; min-width: 80px;">${escapeHtml(person.name)}</span>
                                     <span style="color: rgba(255,255,255,0.6);">|</span>
                                     <span style="color: rgba(255,255,255,0.7);">W1: <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h</span></span>
@@ -873,7 +873,7 @@
                         <div class="session-date">📅 ${dateFrom} - ${dateTo}</div>
                         <div class="session-meta">Erstellt: ${new Date(session.createdAt).toLocaleDateString('de-DE')}</div>
                         ${peopleHtml}
-                        <div class="session-actions" onclick="event.stopPropagation()">
+                        <div class="session-actions" onclick="event.stopPropagation()" style="margin-top: 1rem;">
                             <button class="btn-secondary" onclick="openSession('${session.id}')">Öffnen</button>
                             <button class="btn-secondary" onclick="archiveSession('${session.id}')">Archivieren</button>
                         </div>
@@ -1154,7 +1154,7 @@
             
             container.innerHTML = `
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 1rem;">
                         <h2 style="font-size: 1.4rem; font-weight: 600; color: #ffffff;">${escapeHtml(person.name)}</h2>
                         <button class="btn-danger" onclick="deletePerson(${person.id})">Person löschen</button>
                     </div>
