@@ -545,6 +545,41 @@
             padding: 3rem;
             color: rgba(255, 255, 255, 0.6);
         }
+
+        /* Toggle Button */
+        .toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.12);
+            color: #e8e8e8;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
+        }
+
+        .toggle-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active .toggle-indicator {
+            background: white;
+        }
     </style>
 </head>
 <body>
@@ -607,6 +642,10 @@
                     <h1 style="display: inline-block; margin-left: 1rem;" id="sessionTitle"></h1>
                 </div>
                 <div class="header-actions">
+                    <button class="toggle-btn" id="simpleModeToggle" onclick="toggleSimpleMode()">
+                        <span class="toggle-indicator"></span>
+                        Simple Mode
+                    </button>
                     <button class="btn-success" onclick="showFinalOverview()">📊 Finale Übersicht</button>
                 </div>
             </div>
@@ -719,6 +758,7 @@
         let activePersonTab = null;
         let sessionsListener = null;
         let currentSessionListener = null;
+        let simpleMode = false;
 
         // XSS Protection
         function escapeHtml(unsafe) {
@@ -1173,7 +1213,6 @@
             const effectiveKontingent = weekData.kontingent * weekData.puffer;
             const usedHours = calculateUsedHours(weekData.tasks);
             const remaining = effectiveKontingent - usedHours;
-            const isOverload = remaining < 0;
             const percentage = Math.min(100, (usedHours / effectiveKontingent) * 100);
             const barColor = percentage < 70 ? '#30d158' : percentage < 90 ? '#ffd60a' : '#ff453a';
             
@@ -1203,16 +1242,58 @@
                     </div>
                     
                     <div style="margin-bottom: 0.75rem;">
-                        ${weekData.tasks.map(task => renderTask(person.id, week, task)).join('')}
+                        ${weekData.tasks.map(task => simpleMode ? renderTaskSimple(person.id, week, task) : renderTask(person.id, week, task)).join('')}
                     </div>
                     
-                    <button class="btn-primary" style="width: 100%;" onclick="addTask(${person.id}, ${week})">+ Aufgabe</button>
+                    ${simpleMode ? `
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            ${Object.keys(TSHIRT_SIZES).map(size => `
+                                <button class="btn-secondary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem; flex: 1; min-width: 50px;" 
+                                        onclick="addTaskWithSize(${person.id}, ${week}, '${size}')">
+                                    +${size}
+                                </button>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <button class="btn-primary" style="width: 100%;" onclick="addTask(${person.id}, ${week})">+ Aufgabe</button>
+                    `}
                 </div>
             `;
         }
 
-        // Render Task
-        function renderTask(personId, week, task) {
+        // Render Task Simple (für Simple Mode)
+        function renderTaskSimple(personId, week, task) {
+            const totalHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
+            const sizeStr = task.sizes.join('+') || '-';
+            
+            return `
+                <div class="task-item">
+                    <div style="color: #ffffff; font-weight: 600; min-width: 40px; font-size: 0.8rem;">
+                        ${sizeStr}
+                    </div>
+                    <span style="color: rgba(255,255,255,0.6);">|</span>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600;">
+                        ${totalHours}h
+                    </div>
+                    <button class="btn-danger" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem; flex-shrink: 0; margin-left: auto;" 
+                            onclick="deleteTask(${personId}, ${week}, ${task.id})">✕</button>
+                </div>
+            `;
+        }
+
+        // Add Task With Size
+        window.addTaskWithSize = (personId, week, size) => {
+            const person = people.find(p => p.id === personId);
+            if (person) {
+                person.weeks[week].tasks.push({
+                    id: Date.now(),
+                    sizes: [size],
+                    description: ''
+                });
+                saveSessionData();
+                renderPersonDetail();
+            }
+        };
             const otherWeek = week === 1 ? 2 : 1;
             const totalHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
             
@@ -1339,8 +1420,15 @@
             }
         };
 
-        // Show Final Overview
-        window.showFinalOverview = () => {
+        // Toggle Simple Mode
+        window.toggleSimpleMode = () => {
+            simpleMode = !simpleMode;
+            const btn = document.getElementById('simpleModeToggle');
+            if (btn) {
+                btn.classList.toggle('active', simpleMode);
+            }
+            renderPersonDetail();
+        };
             const content = document.getElementById('overviewContent');
             
             if (people.length === 0) {
