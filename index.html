@@ -1294,6 +1294,9 @@
                 renderPersonDetail();
             }
         };
+
+        // Render Task
+        function renderTask(personId, week, task) {
             const otherWeek = week === 1 ? 2 : 1;
             const totalHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
             
@@ -1320,6 +1323,7 @@
                             onclick="deleteTask(${personId}, ${week}, ${task.id})">✕</button>
                 </div>
             `;
+        }
         }
 
         // Calculate Used Hours
