@@ -1121,7 +1121,7 @@
             renderPersonDetail();
         }
 
-        // Render People Tabs as Checkboxes
+        // Render People Tabs as Toggles (kompakt, horizontal)
         function renderPeopleTabs() {
             const container = document.getElementById('peopleTabsContainer');
             if (people.length === 0) {
@@ -1130,12 +1130,10 @@
             }
             
             container.innerHTML = `
-                <div class="tabs" style="flex-direction: column; gap: 0.5rem;">
+                <div class="tabs">
                     ${people.map(person => `
-                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.08); border-radius: 10px; cursor: pointer; user-select: none;" 
-                             onclick="togglePersonTab(${person.id})">
-                            <input type="checkbox" ${activePersonTabs.includes(person.id) ? 'checked' : ''} style="cursor: pointer; width: 18px; height: 18px;">
-                            <span style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHtml(person.name)}</span>
+                        <div class="tab ${activePersonTabs.includes(person.id) ? 'active' : ''}" onclick="togglePersonTab(${person.id})">
+                            ${escapeHtml(person.name)}
                         </div>
                     `).join('')}
                 </div>
@@ -1205,7 +1203,7 @@
             const activePeople = people.filter(p => activePersonTabs.includes(p.id));
             
             container.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     ${activePeople.map(person => `
                         <div class="card">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 1rem;">
