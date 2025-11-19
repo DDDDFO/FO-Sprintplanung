@@ -63,7 +63,7 @@
             margin-bottom: 0.5rem;
             font-size: 0.85rem;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+            color: #ffffff;
         }
         
         .form-group input {
@@ -208,7 +208,7 @@
         .filter-bar label {
             font-size: 0.85rem;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+            color: #ffffff;
         }
         
         .filter-bar select {
@@ -1241,14 +1241,14 @@
                         <div class="progress-bar" style="background: ${barColor}; width: ${percentage}%;"></div>
                     </div>
                     
-                    <div style="margin-bottom: 0.75rem;">
+                    <div style="margin-bottom: 0.75rem; ${simpleMode ? 'display: flex; flex-wrap: wrap; gap: 0.5rem;' : ''}">
                         ${weekData.tasks.map(task => simpleMode ? renderTaskSimple(person.id, week, task) : renderTask(person.id, week, task)).join('')}
                     </div>
                     
                     ${simpleMode ? `
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             ${Object.keys(TSHIRT_SIZES).map(size => `
-                                <button class="btn-secondary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem; flex: 1; min-width: 50px;" 
+                                <button class="btn-primary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem; flex: 1; min-width: 50px;" 
                                         onclick="addTaskWithSize(${person.id}, ${week}, '${size}')">
                                     +${size}
                                 </button>
@@ -1261,23 +1261,17 @@
             `;
         }
 
-        // Render Task Simple (für Simple Mode)
+        // Render Task Simple (für Simple Mode) - kompaktes Layout nebeneinander
         function renderTaskSimple(personId, week, task) {
             const totalHours = task.sizes.reduce((sum, size) => sum + TSHIRT_SIZES[size], 0);
             const sizeStr = task.sizes.join('+') || '-';
             
             return `
-                <div class="task-item">
-                    <div style="color: #ffffff; font-weight: 600; min-width: 40px; font-size: 0.8rem;">
-                        ${sizeStr}
-                    </div>
-                    <span style="color: rgba(255,255,255,0.6);">|</span>
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600;">
-                        ${totalHours}h
-                    </div>
-                    <button class="btn-danger" style="height: 28px; padding: 0.4rem 0.65rem; font-size: 0.75rem; flex-shrink: 0; margin-left: auto;" 
-                            onclick="deleteTask(${personId}, ${week}, ${task.id})">✕</button>
-                </div>
+                <button class="btn-secondary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem;" 
+                        title="Löschen" onclick="deleteTask(${personId}, ${week}, ${task.id})">
+                    ${sizeStr} | ${totalHours}h
+                    <span style="margin-left: 0.25rem;">✕</span>
+                </button>
             `;
         }
 
