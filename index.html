@@ -15,6 +15,134 @@
             color: #e8e8e8;
         }
         
+        body.light-mode {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .login-header h1 {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .login-header p {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.light-mode .form-group label {
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
+        body.light-mode .form-group input {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .form-group input:focus {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        
+        body.light-mode h1 {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .user-info {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.light-mode .filter-bar {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .filter-bar label {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .filter-bar select {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .filter-bar select option {
+            background: #ffffff;
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .session-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .session-date {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .session-meta {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.light-mode .card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .week-card {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .week-title {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .label {
+            color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.light-mode input[type="text"], 
+        body.light-mode input[type="number"], 
+        body.light-mode input[type="date"], 
+        body.light-mode select {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .modal {
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        body.light-mode .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-mode .modal-header h2 {
+            color: #1a1a2e;
+        }
+        
+        body.light-mode .empty-state {
+            color: rgba(0, 0, 0, 0.5);
+        }
+        
+        body.light-mode .tab {
+            background: rgba(0, 0, 0, 0.08);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .task-item {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
         .container { max-width: 1200px; margin: 0 auto; }
         
         .view { display: none; }
@@ -616,6 +744,7 @@
             <div class="header">
                 <h1>Sprintplanung</h1>
                 <div class="header-actions">
+                    <button class="btn-secondary" id="themeToggle" onclick="toggleTheme()" title="Light/Dark Mode">🌙</button>
                     <span class="user-info" id="userEmail"></span>
                     <button class="btn-secondary" onclick="showArchive()">📦 Archiv</button>
                     <button class="btn-success" onclick="showCreateSessionModal()">+ Neue Session</button>
@@ -765,7 +894,19 @@
         let currentSessionListener = null;
         let simpleMode = false;
 
-        // XSS Protection
+        // Theme Management
+        let isDarkMode = true;
+        
+        window.toggleTheme = () => {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                document.body.classList.remove('light-mode');
+                document.getElementById('themeToggle').textContent = '🌙';
+            } else {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        };
         function escapeHtml(unsafe) {
             if (!unsafe) return '';
             return unsafe.toString()
@@ -1042,10 +1183,17 @@
             
             try {
                 const sessionsRef = collection(db, 'sessions');
-                const q = query(sessionsRef, where('status', '==', 'archived'), orderBy('archivedAt', 'desc'));
+                const q = query(sessionsRef, where('status', '==', 'archived'));
                 
                 const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const archivedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    let archivedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    
+                    // Sortiere nach archivedAt (falls vorhanden) oder createdAt
+                    archivedSessions.sort((a, b) => {
+                        const timeA = a.archivedAt || a.createdAt || 0;
+                        const timeB = b.archivedAt || b.createdAt || 0;
+                        return timeB - timeA;
+                    });
                     
                     if (archivedSessions.length === 0) {
                         content.innerHTML = '<div class="empty-state"><p>Keine archivierten Sessions.</p></div>';
