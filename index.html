@@ -216,9 +216,14 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.06);
-            color: #e8e8e8;
+            color: #ffffff;
             font-size: 0.9rem;
             min-width: 200px;
+        }
+        
+        .filter-bar select option {
+            background: #16213e;
+            color: #ffffff;
         }
         
         .filter-bar select:focus {
@@ -755,7 +760,7 @@
         let currentSession = null;
         let sessions = [];
         let people = [];
-        let activePersonTab = null;
+        let activePersonTabs = [];
         let sessionsListener = null;
         let currentSessionListener = null;
         let simpleMode = false;
@@ -978,10 +983,11 @@
                         currentSession = { id: sessionDoc.id, ...sessionDoc.data() };
                         people = currentSession.data.people || [];
                         
-                        if (activePersonTab && !people.find(p => p.id === activePersonTab)) {
-                            activePersonTab = people.length > 0 ? people[0].id : null;
-                        } else if (!activePersonTab && people.length > 0) {
-                            activePersonTab = people[0].id;
+                        if (activePersonTabs.length > 0) {
+                            activePersonTabs = activePersonTabs.filter(id => people.find(p => p.id === id));
+                        }
+                        if (activePersonTabs.length === 0 && people.length > 0) {
+                            activePersonTabs = [people[0].id];
                         }
                         
                         const dateFrom = new Date(currentSession.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
@@ -1009,7 +1015,7 @@
             
             currentSession = null;
             people = [];
-            activePersonTab = null;
+            activePersonTabs = [];
             showView('sessions');
         };
 
@@ -1115,7 +1121,7 @@
             renderPersonDetail();
         }
 
-        // Render People Tabs
+        // Render People Tabs as Checkboxes
         function renderPeopleTabs() {
             const container = document.getElementById('peopleTabsContainer');
             if (people.length === 0) {
@@ -1124,10 +1130,12 @@
             }
             
             container.innerHTML = `
-                <div class="tabs">
+                <div class="tabs" style="flex-direction: column; gap: 0.5rem;">
                     ${people.map(person => `
-                        <div class="tab ${activePersonTab === person.id ? 'active' : ''}" onclick="setActivePersonTab(${person.id})">
-                            ${escapeHtml(person.name)}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.08); border-radius: 10px; cursor: pointer; user-select: none;" 
+                             onclick="togglePersonTab(${person.id})">
+                            <input type="checkbox" ${activePersonTabs.includes(person.id) ? 'checked' : ''} style="cursor: pointer; width: 18px; height: 18px;">
+                            <span style="color: #ffffff; font-weight: 500; flex: 1;">${escapeHtml(person.name)}</span>
                         </div>
                     `).join('')}
                 </div>
@@ -1135,8 +1143,13 @@
         }
 
         // Set Active Person Tab
-        window.setActivePersonTab = (personId) => {
-            activePersonTab = personId;
+        // Toggle Person Tab (Checkbox)
+        window.togglePersonTab = (personId) => {
+            if (activePersonTabs.includes(personId)) {
+                activePersonTabs = activePersonTabs.filter(id => id !== personId);
+            } else {
+                activePersonTabs.push(personId);
+            }
             renderPeopleTabs();
             renderPersonDetail();
         };
@@ -1158,7 +1171,9 @@
             };
             
             people.push(newPerson);
-            activePersonTab = newPerson.id;
+            if (!activePersonTabs.includes(newPerson.id)) {
+                activePersonTabs.push(newPerson.id);
+            }
             input.value = '';
             
             saveSessionData();
@@ -1172,9 +1187,7 @@
             if (!confirm('Person wirklich löschen?')) return;
             
             people = people.filter(p => p.id !== personId);
-            if (activePersonTab === personId) {
-                activePersonTab = people.length > 0 ? people[0].id : null;
-            }
+            activePersonTabs = activePersonTabs.filter(id => id !== personId);
             
             saveSessionData();
             renderPlanningView();
@@ -1184,25 +1197,28 @@
         function renderPersonDetail() {
             const container = document.getElementById('personDetailContainer');
             
-            if (!activePersonTab) {
-                container.innerHTML = '<div class="empty-state"><p>Keine Person ausgewählt. Füge eine Person hinzu!</p></div>';
+            if (activePersonTabs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Wähle Personen aus, um sie zu planen!</p></div>';
                 return;
             }
             
-            const person = people.find(p => p.id === activePersonTab);
-            if (!person) return;
+            const activePeople = people.filter(p => activePersonTabs.includes(p.id));
             
             container.innerHTML = `
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 1rem;">
-                        <h2 style="font-size: 1.4rem; font-weight: 600; color: #ffffff;">${escapeHtml(person.name)}</h2>
-                        <button class="btn-danger" onclick="deletePerson(${person.id})">Person löschen</button>
-                    </div>
-                    
-                    <div class="weeks-grid">
-                        ${renderWeek(person, 1)}
-                        ${renderWeek(person, 2)}
-                    </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+                    ${activePeople.map(person => `
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 1rem;">
+                                <h2 style="font-size: 1.4rem; font-weight: 600; color: #ffffff;">${escapeHtml(person.name)}</h2>
+                                <button class="btn-danger" onclick="deletePerson(${person.id})">Löschen</button>
+                            </div>
+                            
+                            <div class="weeks-grid">
+                                ${renderWeek(person, 1)}
+                                ${renderWeek(person, 2)}
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
             `;
         }
@@ -1269,7 +1285,7 @@
             return `
                 <button class="btn-secondary" style="padding: 0.5rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem;" 
                         title="Löschen" onclick="deleteTask(${personId}, ${week}, ${task.id})">
-                    ${sizeStr} | ${totalHours}h
+                    <strong>${sizeStr}</strong> | ${totalHours}h
                     <span style="margin-left: 0.25rem;">✕</span>
                 </button>
             `;
