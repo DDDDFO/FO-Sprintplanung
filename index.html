@@ -143,6 +143,22 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
+        /* Light Mode Border and Separator Lines */
+        body.light-mode [style*="border"] {
+            border-color: rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        body.light-mode [style*="border-bottom"],
+        body.light-mode [style*="border-top"],
+        body.light-mode [style*="border-left"],
+        body.light-mode [style*="border-right"] {
+            border-color: rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        body.light-mode [style*="border: 1px solid rgba(255,255,255"] {
+            border-color: rgba(0, 0, 0, 0.15) !important;
+        }
+        
         /* Light Mode Button Overrides */
         body.light-mode .btn-secondary {
             background: rgba(0, 0, 0, 0.1);
@@ -483,6 +499,41 @@
             box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
         }
         
+        /* Session Team Select Styling - Match teamFilter */
+        #sessionTeam {
+            padding: 0.6rem 1rem !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 10px !important;
+            background: rgba(255, 255, 255, 0.06) !important;
+            color: #ffffff !important;
+            font-size: 0.9rem !important;
+            min-width: 200px !important;
+            width: 100% !important;
+        }
+        
+        #sessionTeam option {
+            background: #16213e;
+            color: #ffffff;
+        }
+        
+        #sessionTeam:focus {
+            outline: none;
+            border-color: #0a84ff !important;
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15) !important;
+        }
+        
+        body.light-mode #sessionTeam {
+            padding: 0.6rem 1rem !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode #sessionTeam option {
+            background: #ffffff;
+            color: #1a1a2e;
+        }
+        
         /* Session Grid */
         .sessions-grid {
             display: grid;
@@ -650,7 +701,7 @@
             gap: 0.75rem;
             margin-bottom: 0.5rem;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
         
         .label {
@@ -1195,7 +1246,7 @@
                 const peopleList = session.data?.people || [];
                 const peopleHtml = peopleList.length > 0 ? `
                     <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); margin-bottom: 0.75rem;">
-                        ${peopleList.slice(0, 4).map((person, idx) => {
+                        ${peopleList.map((person, idx) => {
                             const week1Data = person.weeks[1];
                             const week2Data = person.weeks[2];
                             const week1Effective = week1Data.kontingent * week1Data.puffer;
@@ -1212,7 +1263,7 @@
                             };
                             
                             return `
-                                <div style="font-size: 0.75rem; padding: 0.4rem 0; ${idx < Math.min(4, peopleList.length) - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : ''} display: flex; gap: 0.75rem; align-items: center; white-space: nowrap;">
+                                <div style="font-size: 0.75rem; padding: 0.4rem 0; ${idx < peopleList.length - 1 ? 'border-bottom: 1px solid rgba(255,255,255,0.08);' : ''} display: flex; gap: 0.75rem; align-items: center; white-space: nowrap;">
                                     <span style="color: #ffffff; font-weight: 600; min-width: 80px;">${escapeHtml(person.name)}</span>
                                     <span style="color: rgba(255,255,255,0.6);">|</span>
                                     <span style="color: rgba(255,255,255,0.7);">W1: <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h</span></span>
@@ -1221,7 +1272,6 @@
                                 </div>
                             `;
                         }).join('')}
-                        ${peopleList.length > 4 ? `<div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); padding-top: 0.4rem;">+ ${peopleList.length - 4} weitere</div>` : ''}
                     </div>
                 ` : '<div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic;">Keine Personen</div>';
                 
@@ -1374,19 +1424,62 @@
                     if (archivedSessions.length === 0) {
                         content.innerHTML = '<div class="empty-state"><p>Keine archivierten Sessions.</p></div>';
                     } else {
-                        content.innerHTML = archivedSessions.map(session => {
-                            const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE');
-                            const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE');
-                            return `
-                                <div class="session-card" style="margin-bottom: 1rem;">
-                                    <div><strong>${escapeHtml(session.team)}</strong></div>
-                                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${dateFrom} - ${dateTo}</div>
-                                    <div style="margin-top: 0.75rem;">
-                                        <button class="btn-danger" onclick="deleteSession('${session.id}')">Endgültig löschen</button>
+                        content.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.25rem;">
+                            ${archivedSessions.map(session => {
+                                const peopleList = session.data?.people || [];
+                                const dateFrom = new Date(session.dateFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                                const dateTo = new Date(session.dateTo).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                                
+                                const peopleHtml = peopleList.length > 0 ? `
+                                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                                        ${peopleList.map(person => {
+                                            const week1Data = person.weeks[1];
+                                            const week2Data = person.weeks[2];
+                                            const week1Effective = week1Data.kontingent * week1Data.puffer;
+                                            const week2Effective = week2Data.kontingent * week2Data.puffer;
+                                            const week1Used = calculateUsedHours(week1Data.tasks);
+                                            const week2Used = calculateUsedHours(week2Data.tasks);
+                                            const week1Available = week1Effective - week1Used;
+                                            const week2Available = week2Effective - week2Used;
+                                            
+                                            const getAvailableColor = (available) => {
+                                                if (available < 0) return '#ff453a';
+                                                if (available === 0) return '#ffc107';
+                                                return '#30d158';
+                                            };
+                                            
+                                            return `
+                                                <div style="font-size: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; gap: 0.75rem; align-items: center; white-space: nowrap;">
+                                                    <span style="color: #ffffff; font-weight: 600; min-width: 80px;">${escapeHtml(person.name)}</span>
+                                                    <span style="color: rgba(255,255,255,0.6);">|</span>
+                                                    <span style="color: rgba(255,255,255,0.7);">W1: <span style="color: ${getAvailableColor(week1Available)}; font-weight: 600;">${week1Available > 0 ? '+' : ''}${week1Available.toFixed(0)}h</span></span>
+                                                    <span style="color: rgba(255,255,255,0.6);">|</span>
+                                                    <span style="color: rgba(255,255,255,0.7);">W2: <span style="color: ${getAvailableColor(week2Available)}; font-weight: 600;">${week2Available > 0 ? '+' : ''}${week2Available.toFixed(0)}h</span></span>
+                                                </div>
+                                            `;
+                                        }).join('')}
                                     </div>
-                                </div>
-                            `;
-                        }).join('');
+                                ` : '';
+                                
+                                const teamClass = session.team.toLowerCase().replace(/ /g, '-');
+                                const teamBadgeClass = teamClass.includes('brand') ? 'team-brand' : teamClass.includes('campaign') ? 'team-campaign' : teamClass.includes('media') ? 'team-media' : 'team-custom';
+                                
+                                return `
+                                    <div class="session-card">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                            <span class="team-badge ${teamBadgeClass}">${escapeHtml(session.team)}</span>
+                                        </div>
+                                        <div class="session-date">📅 ${dateFrom} - ${dateTo}</div>
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem;">Archiviert: ${new Date(session.archivedAt || session.createdAt).toLocaleDateString('de-DE')}</div>
+                                        ${peopleHtml}
+                                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                            <button class="btn-secondary" style="flex: 1;" onclick="restoreSession('${session.id}')">🔄 Zurückbringen</button>
+                                            <button class="btn-danger" style="flex: 1;" onclick="deleteSession('${session.id}')">🗑️ Löschen</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>`;
                     }
                 }, (error) => {
                     console.error('Error loading archive:', error);
@@ -1407,6 +1500,24 @@
                 window.archiveUnsubscribe = null;
             }
             document.getElementById('archiveModal').classList.remove('active');
+        };
+
+        // Restore Session from Archive
+        window.restoreSession = async (sessionId) => {
+            if (!confirm('Session wirklich aus dem Archiv zurückbringen?')) return;
+            
+            updateSyncStatus(true);
+            try {
+                await updateDoc(doc(db, 'sessions', sessionId), {
+                    status: 'active',
+                    archivedAt: null
+                });
+                showArchive();
+            } catch (error) {
+                console.error('Error restoring session:', error);
+                alert('Fehler beim Zurückbringen der Session');
+            }
+            updateSyncStatus(false);
         };
 
         // Delete Session
