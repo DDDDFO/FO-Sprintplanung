@@ -143,6 +143,129 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
+        /* Light Mode Button Overrides */
+        body.light-mode .btn-secondary {
+            background: rgba(0, 0, 0, 0.1);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .btn-danger {
+            background: linear-gradient(135deg, #ff453a 0%, #dc3545 100%);
+            color: white;
+        }
+        
+        body.light-mode .btn-success {
+            background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+            color: white;
+        }
+        
+        body.light-mode .btn-primary {
+            background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+            color: white;
+        }
+        
+        /* Light Mode Text in inline styles - using CSS specificity */
+        body.light-mode h2 {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode h3 {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode p {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode span {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode div {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode .tab {
+            background: rgba(0, 0, 0, 0.08);
+            color: #1a1a2e !important;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .tab.active {
+            background: rgba(0, 0, 0, 0.15);
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode [style*="color: #ffffff"],
+        body.light-mode [style*="color:#ffffff"] {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode [style*="color: rgba(255,255,255"],
+        body.light-mode [style*="color:rgba(255,255,255"] {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode [style*="color: #e8e8e8"],
+        body.light-mode [style*="color:#e8e8e8"] {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode .person-info {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode .week-section {
+            background: rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        body.light-mode .week-section h3 {
+            color: #1a1a2e !important;
+        }
+        
+        body.light-mode .empty-state {
+            color: rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        body.light-mode .loading {
+            color: #1a1a2e !important;
+        }
+        
+        /* Dark Mode Toggle Button */
+        .theme-toggle-btn {
+            padding: 0.65rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.12);
+            color: #e8e8e8;
+        }
+        
+        .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+        
+        body.light-mode .theme-toggle-btn {
+            background: rgba(0, 0, 0, 0.1);
+            color: #1a1a2e;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-mode .theme-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
         .container { max-width: 1200px; margin: 0 auto; }
         
         .view { display: none; }
@@ -684,15 +807,21 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            padding: 0.65rem 1.25rem;
             border: none;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.12);
-            color: #e8e8e8;
+            transition: all 0.2s ease;
+            background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(48, 209, 88, 0.4);
         }
 
         .toggle-btn.active {
@@ -703,15 +832,55 @@
 
         .toggle-indicator {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.7);
             transition: all 0.3s ease;
         }
 
         .toggle-btn.active .toggle-indicator {
             background: white;
+        }
+        
+        body.light-mode .toggle-btn {
+            background: linear-gradient(135deg, #30d158 0%, #28a745 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(48, 209, 88, 0.3);
+        }
+        
+        body.light-mode .toggle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(48, 209, 88, 0.4);
+        }
+        
+        /* Aggressive Light Mode Text Color Override */
+        body.light-mode * {
+            color: inherit !important;
+        }
+        
+        body.light-mode *:not(.btn-success):not(.btn-danger):not(.btn-primary):not(.error-message) {
+            color: #1a1a2e !important;
+        }
+        
+        /* Preserve white text only for colored buttons */
+        body.light-mode .btn-success,
+        body.light-mode .btn-danger,
+        body.light-mode .btn-primary,
+        body.light-mode .theme-toggle-btn {
+            color: white !important;
+        }
+        
+        /* Modal and other special elements */
+        body.light-mode .modal,
+        body.light-mode .modal-content,
+        body.light-mode .card {
+            color: #1a1a2e !important;
+        }
+        
+        /* Override any inline white-color styles */
+        body.light-mode [style*="color: rgb"] {
+            color: #1a1a2e !important;
         }
     </style>
 </head>
@@ -744,10 +913,10 @@
             <div class="header">
                 <h1>Sprintplanung</h1>
                 <div class="header-actions">
-                    <button class="btn-secondary" id="themeToggle" onclick="toggleTheme()" title="Light/Dark Mode">🌙</button>
                     <span class="user-info" id="userEmail"></span>
                     <button class="btn-secondary" onclick="showArchive()">📦 Archiv</button>
                     <button class="btn-success" onclick="showCreateSessionModal()">+ Neue Session</button>
+                    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Light/Dark Mode">🌙 Theme</button>
                     <button class="btn-secondary btn-icon" onclick="logout()" title="Abmelden">🚪</button>
                 </div>
             </div>
@@ -780,6 +949,7 @@
                         <span class="toggle-indicator"></span>
                         Simple Mode
                     </button>
+                    <button class="theme-toggle-btn" id="themeTogglePlanning" onclick="toggleTheme()" title="Light/Dark Mode">🌙 Theme</button>
                     <button class="btn-success" onclick="showFinalOverview()">📊 Finale Übersicht</button>
                 </div>
             </div>
@@ -901,10 +1071,16 @@
             isDarkMode = !isDarkMode;
             if (isDarkMode) {
                 document.body.classList.remove('light-mode');
-                document.getElementById('themeToggle').textContent = '🌙';
+                const themeBtn1 = document.getElementById('themeToggle');
+                const themeBtn2 = document.getElementById('themeTogglePlanning');
+                if (themeBtn1) themeBtn1.textContent = '🌙 Theme';
+                if (themeBtn2) themeBtn2.textContent = '🌙 Theme';
             } else {
                 document.body.classList.add('light-mode');
-                document.getElementById('themeToggle').textContent = '☀️';
+                const themeBtn1 = document.getElementById('themeToggle');
+                const themeBtn2 = document.getElementById('themeTogglePlanning');
+                if (themeBtn1) themeBtn1.textContent = '☀️ Theme';
+                if (themeBtn2) themeBtn2.textContent = '☀️ Theme';
             }
         };
         function escapeHtml(unsafe) {
