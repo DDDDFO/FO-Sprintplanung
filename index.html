@@ -1324,7 +1324,6 @@
                 </div>
             `;
         }
-        }
 
         // Calculate Used Hours
         function calculateUsedHours(tasks) {
@@ -1433,6 +1432,9 @@
             }
             renderPersonDetail();
         };
+
+        // Show Final Overview
+        window.showFinalOverview = () => {
             const content = document.getElementById('overviewContent');
             
             if (people.length === 0) {
